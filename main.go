@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/rs/xid"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rs/xid"
 )
 
 var recipes []Recipe
@@ -20,6 +21,11 @@ type Recipe struct {
 	Ingredients  []string  `json:"ingredients"`
 	Instructions []string  `json:"instructions"`
 	PublishedAt  time.Time `json:"publishedAt"`
+	Chef         struct {
+		Name    string `json:"chefName"`
+		Country string `json:"country"`
+		YOE     int    `json:"yoe"`
+	} `json:"chef"`
 }
 
 func DeleteRecipeHandler(c *gin.Context) {
@@ -96,6 +102,15 @@ func NewRecipeHandler(c *gin.Context) {
 	recipe.Id = xid.New().String()
 	recipe.PublishedAt = time.Now()
 	recipes = append(recipes, recipe)
+
+	/*no need to check is yoe is empty because zero value of
+	yoe is 0 and it is possible to have a chef with 0 experience*/
+	if recipe.Chef.Name == "" || recipe.Chef.Country == "" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Cannot create recipe without chef",
+		})
+		return
+	}
 	c.JSON(http.StatusOK, recipe)
 }
 
